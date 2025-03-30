@@ -7,17 +7,35 @@ function setPixel(ctx, pixelBuffer, x, y, color = [0, 0, 0, 255])
     pixelBuffer.data[index + 3] = color[3]; // A
 }
 
+function waveFunction(x, y, time, width, height)
+{
+    const centerX = width / 2;
+    const centerY = height / 2;
+    
+    // Odległość od środka (normalizowana)
+    const dx = (x - centerX) / (width * 0.2);
+    const dy = (y - centerY) / (height * 0.2);
+    
+    // Amplituda = Gaussa * oscylacja w czasie
+    const amplitude = Math.exp(-(dx * dx + dy * dy)) * Math.cos(time * 0.1);
+    return amplitude;
+}
+
+
 function Draw(ctx, pixelBuffer, time)
 {
-    let r = 255;
-    let g = 125;
-    let b = 0;
-
     for (var x = 0; x < ctx.canvas.width; x++)
     {
-        r = time * 3 % 256;
         for (var y = 0; y < ctx.canvas.height; y++)
         {
+            const psi = waveFunction(x, y, time, ctx.canvas.width, ctx.canvas.height);
+            
+            const probability = psi * psi;
+            
+            const r = Math.floor(255 * probability);
+            const g = Math.floor(255 * probability);
+            const b = 0;
+            
             setPixel(ctx, pixelBuffer, x, y, [r, g, b, 255]);
         }
     }
