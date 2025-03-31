@@ -42,22 +42,24 @@ function getInitialWaveFunction(w, h)
     return initializeRandomNoise(w, h);
 }
 
-function getUpdatedWaveFunction(psi)
+function getUpdatedWaveFunction(psi, plancConstant, mass)
 {
-    // const centerX = width / 2;
-    // const centerY = height / 2;
-    
-    // // Odległość od środka (normalizowana)
-    // const dx = (x - centerX) / (width * 0.2);
-    // const dy = (y - centerY) / (height * 0.2);
-    
-    // // Amplituda = Gaussa * oscylacja w czasie
-    // const amplitude = Complex.exp(-(dx * dx + dy * dy)) * Math.cos(time * 0.1);
-    for (let x = 0; x < psi.length; x++)
+    var delta_t = 1;
+    var width = psi.length - 1;
+    var height = psi[0].length - 1;
+    width = 3;
+    height = 3;
+    for (let x = 1; x < width; x++)
     {
-        for (let y = 0; y < psi[0].length; y++)
+        for (let y = 1; y < height; y++)
         {
-            psi[x][y].re += 0.1;
+            const reducedPlanckConstant = plancConstant/(2 * 3.1415);
+            var factor = math.multiply(math.complex(0, 1), reducedPlanckConstant, delta_t, 1/(2 * mass));
+            var laplace = math.add(psi[x+1][y], math.multiply(-2,psi[x][y]), psi[x-1][y], psi[x][y+1], math.multiply(-2, psi[x][y]), psi[x][y-1])
+            console.log("factor = " + factor)
+            console.log("laplace = " + laplace)
+            psi[x][y] = math.add(psi[x][y], math.multiply(factor, laplace));
+            console.log(psi[x][y])
         }
     }
     return psi;
@@ -93,11 +95,10 @@ export function Play(ctx)
         }
         else
         {
-            psi = getUpdatedWaveFunction(psi);
+            psi = getUpdatedWaveFunction(psi, 1, 1);
         }
         console.log(time)
-        // const probability = math.multiply(math.abs(psi[10][10]), math.abs(psi[10][10]));
-        Draw(ctx, pixelBuffer, psi, time);
+        // Draw(ctx, pixelBuffer, psi, time);
         time = time + 1;
     },
     50);
