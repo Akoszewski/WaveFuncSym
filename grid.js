@@ -42,24 +42,23 @@ function getInitialWaveFunction(w, h)
     return initializeRandomNoise(w, h);
 }
 
-function getUpdatedWaveFunction(psi, plancConstant, mass)
+function getUpdatedWaveFunction(psi, reducedPlanckConstant, mass)
 {
     var delta_t = 1;
     var width = psi.length - 1;
     var height = psi[0].length - 1;
-    width = 3;
-    height = 3;
+    // width = 3;
+    // height = 3;
     for (let x = 1; x < width; x++)
     {
         for (let y = 1; y < height; y++)
         {
-            const reducedPlanckConstant = plancConstant/(2 * 3.1415);
             var factor = math.multiply(math.complex(0, 1), reducedPlanckConstant, delta_t, 1/(2 * mass));
             var laplace = math.add(psi[x+1][y], math.multiply(-2,psi[x][y]), psi[x-1][y], psi[x][y+1], math.multiply(-2, psi[x][y]), psi[x][y-1])
-            console.log("factor = " + factor)
-            console.log("laplace = " + laplace)
+            // console.log("factor = " + factor)
+            // console.log("laplace = " + laplace)
             psi[x][y] = math.add(psi[x][y], math.multiply(factor, laplace));
-            console.log(psi[x][y])
+            // console.log(psi[x][y])
         }
     }
     return psi;
@@ -98,7 +97,7 @@ export function Play(ctx)
             psi = getUpdatedWaveFunction(psi, 1, 1);
         }
         console.log(time)
-        // Draw(ctx, pixelBuffer, psi, time);
+        Draw(ctx, pixelBuffer, psi, time);
         time = time + 1;
     },
     50);
