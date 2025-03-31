@@ -1,3 +1,11 @@
+function roundComplex(complexNum, decimals)
+{
+    return math.complex(
+        math.round(complexNum.re, decimals),
+        math.round(complexNum.im, decimals)
+    );
+}
+
 function setPixel(ctx, pixelBuffer, x, y, color = [0, 0, 0, 255])
 {
     const index = (y * ctx.canvas.width + x) * 4;
@@ -14,11 +22,20 @@ function initializeRandomNoise(width, height)
     {
         for (let x = 0; x < width; x++)
         {
-            psi[y][x] = math.complex(Math.random() - 0.5, Math.random() - 0.5);
+            psi[y][x] = roundComplex(math.complex(Math.random() - 0.5, Math.random() - 0.5), 3);
         }
     }
     return psi;
 }
+
+// function initializeRandomNoise(width, height) {
+//     return Array.from({ length: height }, () =>
+//         Array.from({ length: width }, () => {
+//             let theta = Math.random() * 2 * Math.PI;
+//             return math.complex(Math.cos(theta), Math.sin(theta));
+//         })
+//     );
+// }
 
 function getInitialWaveFunction(w, h)
 {
@@ -36,13 +53,13 @@ function getUpdatedWaveFunction(psi)
     
     // // Amplituda = Gaussa * oscylacja w czasie
     // const amplitude = Complex.exp(-(dx * dx + dy * dy)) * Math.cos(time * 0.1);
-    const amplitude = 0.5;
-    return amplitude;
-}
-
-function UpdateSym(ctx, psi, time)
-{
-    psi = getUpdatedWaveFunction(psi);
+    for (let x = 0; x < psi.length; x++)
+    {
+        for (let y = 0; y < psi[0].length; y++)
+        {
+            psi[x][y].re += 0.1;
+        }
+    }
     return psi;
 }
 
@@ -52,10 +69,7 @@ function Draw(ctx, pixelBuffer, psi, time)
     {
         for (var y = 0; y < ctx.canvas.height; y++)
         {
-            const psiVal = psi[x][y];
-            
-            const probability = psiVal * psiVal;
-            
+            const probability = math.pow(math.abs(psi[y][x]), 2);
             const r = Math.floor(255 * probability);
             const g = Math.floor(255 * probability);
             const b = 0;
@@ -69,12 +83,20 @@ function Draw(ctx, pixelBuffer, psi, time)
 export function Play(ctx)
 {
     const pixelBuffer = ctx.createImageData(ctx.canvas.width, ctx.canvas.height);
-    var psi = getInitialWaveFunction(ctx.canvas.width, ctx.canvas.height);
     var time = 0;
+    var psi = 0;
     setInterval(() =>
     {
-        console.log(psi.length)
-        psi = UpdateSym(ctx, psi, time)
+        if (time == 0)
+        {
+            psi = getInitialWaveFunction(ctx.canvas.width, ctx.canvas.height);
+        }
+        else
+        {
+            psi = getUpdatedWaveFunction(psi);
+        }
+        console.log(time)
+        // const probability = math.multiply(math.abs(psi[10][10]), math.abs(psi[10][10]));
         Draw(ctx, pixelBuffer, psi, time);
         time = time + 1;
     },
