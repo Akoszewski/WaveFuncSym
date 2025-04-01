@@ -38,7 +38,6 @@ function initializeGaussianWavepacket(width, height, center_x, center_y, sigma, 
             var initMomentums = math.complex(0, init_momemtum_x * x + init_momentum_y * y);
             var quotient = -((x-center_x)**2 + (y-center_y)**2)/4*sigma**2;
             var exponent = math.exp(math.multiply(math.add(quotient, initMomentums), scalingConstant));
-            // psi[x][y] = math.multiply(constant, exponent);
             psi[y][x] = exponent;
         }
     }
@@ -56,7 +55,7 @@ function initializeGaussianWavepacket(width, height, center_x, center_y, sigma, 
 
 function getInitialWaveFunction(w, h)
 {
-    return initializeGaussianWavepacket(w, h, w/2, h/2, 5, 2, 2, 0.001);
+    return initializeGaussianWavepacket(w, h, w/2, h/2, 20, 2, 2, 0.001);
 }
 
 function getUpdatedWaveFunction(psi, reducedPlanckConstant, mass)
