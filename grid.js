@@ -28,6 +28,23 @@ function initializeRandomNoise(width, height)
     return psi;
 }
 
+function initializeGaussianWavepacket(width, height, center_x, center_y, sigma, init_momemtum_x, init_momentum_y, scalingConstant)
+{
+    const psi = new Array(height).fill(0).map(() => new Array(width).fill(0));
+    for (let y = 0; y < height; y++)
+    {
+        for (let x = 0; x < width; x++)
+        {
+            var initMomentums = math.complex(0, init_momemtum_x * x + init_momentum_y * y);
+            var quotient = -((x-center_x)**2 + (y-center_y)**2)/4*sigma**2;
+            var exponent = math.exp(math.multiply(math.add(quotient, initMomentums), scalingConstant));
+            // psi[x][y] = math.multiply(constant, exponent);
+            psi[y][x] = exponent;
+        }
+    }
+    return psi;
+}
+
 // function initializeRandomNoise(width, height) {
 //     return Array.from({ length: height }, () =>
 //         Array.from({ length: width }, () => {
@@ -39,12 +56,12 @@ function initializeRandomNoise(width, height)
 
 function getInitialWaveFunction(w, h)
 {
-    return initializeRandomNoise(w, h);
+    return initializeGaussianWavepacket(w, h, w/2, h/2, 5, 2, 2, 0.001);
 }
 
 function getUpdatedWaveFunction(psi, reducedPlanckConstant, mass)
 {
-    var delta_t = 1;
+    var delta_t = 0.1;
     var width = psi.length - 1;
     var height = psi[0].length - 1;
     // width = 3;
@@ -55,16 +72,16 @@ function getUpdatedWaveFunction(psi, reducedPlanckConstant, mass)
         {
             var factor = math.multiply(math.complex(0, 1), reducedPlanckConstant, delta_t, 1/(2 * mass));
             var laplace = math.add(psi[x+1][y], math.multiply(-2,psi[x][y]), psi[x-1][y], psi[x][y+1], math.multiply(-2, psi[x][y]), psi[x][y-1])
+            psi[x][y] = roundComplex(math.add(psi[x][y], math.multiply(factor, laplace)), 3);
             // console.log("factor = " + factor)
             // console.log("laplace = " + laplace)
-            psi[x][y] = math.add(psi[x][y], math.multiply(factor, laplace));
             // console.log(psi[x][y])
         }
     }
     return psi;
 }
 
-function Draw(ctx, pixelBuffer, psi, time)
+function Draw(ctx, pixelBuffer, psi, steps)
 {
     for (var x = 0; x < ctx.canvas.width; x++)
     {
@@ -84,11 +101,11 @@ function Draw(ctx, pixelBuffer, psi, time)
 export function Play(ctx)
 {
     const pixelBuffer = ctx.createImageData(ctx.canvas.width, ctx.canvas.height);
-    var time = 0;
+    var steps = 0;
     var psi = 0;
     setInterval(() =>
     {
-        if (time == 0)
+        if (steps == 0)
         {
             psi = getInitialWaveFunction(ctx.canvas.width, ctx.canvas.height);
         }
@@ -96,9 +113,10 @@ export function Play(ctx)
         {
             psi = getUpdatedWaveFunction(psi, 1, 1);
         }
-        console.log(time)
-        Draw(ctx, pixelBuffer, psi, time);
-        time = time + 1;
+        console.log(steps)
+        // console.log(psi[8][8])
+        Draw(ctx, pixelBuffer, psi, steps);
+        steps = steps + 1;
     },
     50);
 }
