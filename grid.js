@@ -76,7 +76,7 @@ function calculateLaplacianAtPoint(func, x, y)
     return (func[x+1][y] - 2*func[x][y] + func[x-1][y] + func[x][y+1] - 2*func[x][y] + func[x][y-1]);
 }
 
-function getUpdatedWaveFunction(psi, reducedPlanckConstant, mass)
+function getUpdatedWaveFunction(psi, reducedPlanckConstant, mass, rounding)
 {
     var psiRe = psi[0];
     var psiIm = psi[1];
@@ -88,21 +88,20 @@ function getUpdatedWaveFunction(psi, reducedPlanckConstant, mass)
     {
         for (let y = 1; y < height; y++)
         {
-            // var laplaceRe = math.round(calculateLaplacianAtPoint(psiRe, x, y), 9);
-            // var laplaceIm = math.round(calculateLaplacianAtPoint(psiIm, x, y), 9);
             var laplaceRe = calculateLaplacianAtPoint(psiRe, x, y);
-            var laplaceIm = calculateLaplacianAtPoint(psiIm, x, y);
-            // psiRe[x][y] = math.round((-factor) * laplaceIm, 9);
-            // psiIm[x][y] = math.round(factor * laplaceRe, 9);
-            psiRe[x][y] = -factor * laplaceIm;
-            psiIm[x][y] = factor * laplaceRe;
-            // console.log("factor = " + factor)
-            // console.log("laplaceRe = " + laplaceRe)
-            // console.log(psi[x][y])
+            var laplaceIm = calculateLaplacianAtPoint(psiIm, x, y)
+            if (rounding > -1) {
+                laplaceRe = math.round(laplaceRe, rounding);
+                laplaceIm = math.round(laplaceIm, rounding);
+            }
+            psiRe[x][y] = psiRe[x][y] + (-factor) * laplaceIm;
+            psiIm[x][y] = psiIm[x][y] + factor * laplaceRe;
+            if (rounding > -1) {
+                psiRe[x][y] = math.round(psiRe[x][y], rounding);
+                psiIm[x][y] = math.round(psiIm[x][y], rounding);
+            }
         }
-    }
-    console.log("Value: " + psiRe[psiRe[0].length/2][psiRe.length/2])
-    
+    }    
     return [psiRe, psiIm];
 }
 
@@ -136,7 +135,7 @@ export function Play(ctx)
         }
         else
         {
-            psi = getUpdatedWaveFunction(psi, 1, 1);
+            psi = getUpdatedWaveFunction(psi, 1, 1, -1);
         }
         console.log(steps)
         var psiRe = psi[0];
@@ -144,5 +143,5 @@ export function Play(ctx)
         Draw(ctx, pixelBuffer, psiRe, psiIm, steps);
         steps = steps + 1;
     },
-    1000);
+    50);
 }
