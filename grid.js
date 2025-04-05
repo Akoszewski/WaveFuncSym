@@ -101,7 +101,8 @@ function getUpdatedWaveFunction(psi, reducedPlanckConstant, mass)
             // console.log(psi[x][y])
         }
     }
-    console.log("Value: " + psiRe[psiRe.length/2][psiRe[0].length/2])
+    console.log("Value: " + psiRe[psiRe[0].length/2][psiRe.length/2])
+    
     return [psiRe, psiIm];
 }
 
