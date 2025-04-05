@@ -66,9 +66,19 @@ function initializeGaussianWavepacket(width, height, center_x, center_y, sigma, 
 //     );
 // }
 
+function initializeEmptyPotential(w, h)
+{
+    return new Array(h).fill(0).map(() => new Array(w).fill(0));
+}
+
 function getInitialWaveFunction(w, h)
 {
     return initializeGaussianWavepacket(w, h, w/2, h/2, 20, 2, 2, 0.001);
+}
+
+function getInitialPotential(w, h)
+{
+    return initializeEmptyPotential(w, h);
 }
 
 function calculateLaplacianAtPoint(func, x, y)
@@ -76,7 +86,7 @@ function calculateLaplacianAtPoint(func, x, y)
     return (func[x+1][y] - 2*func[x][y] + func[x-1][y] + func[x][y+1] - 2*func[x][y] + func[x][y-1]);
 }
 
-function getUpdatedWaveFunction(psi, reducedPlanckConstant, mass, rounding)
+function getUpdatedWaveFunction(psi, potential, reducedPlanckConstant, mass, rounding)
 {
     var psiRe = psi[0];
     var psiIm = psi[1];
@@ -94,8 +104,8 @@ function getUpdatedWaveFunction(psi, reducedPlanckConstant, mass, rounding)
                 laplaceRe = math.round(laplaceRe, rounding);
                 laplaceIm = math.round(laplaceIm, rounding);
             }
-            psiRe[x][y] = psiRe[x][y] + (-factor) * laplaceIm;
-            psiIm[x][y] = psiIm[x][y] + factor * laplaceRe;
+            psiRe[x][y] = psiRe[x][y] + (-factor) * laplaceIm + potential[x][y] * psiIm[x][y];
+            psiIm[x][y] = psiIm[x][y] + factor * laplaceRe - potential[x][y] * psiRe[x][y];
             if (rounding > -1) {
                 psiRe[x][y] = math.round(psiRe[x][y], rounding);
                 psiIm[x][y] = math.round(psiIm[x][y], rounding);
@@ -126,7 +136,8 @@ export function Play(ctx)
 {
     const pixelBuffer = ctx.createImageData(ctx.canvas.width, ctx.canvas.height);
     var steps = 0;
-    var psi = Array()
+    var psi = Array();
+    var potential = getInitialPotential(ctx.canvas.width, ctx.canvas.height);
     setInterval(() =>
     {
         if (steps == 0)
@@ -135,7 +146,7 @@ export function Play(ctx)
         }
         else
         {
-            psi = getUpdatedWaveFunction(psi, 1, 1, -1);
+            psi = getUpdatedWaveFunction(psi, potential, 1, 1, -1);
         }
         console.log(steps)
         var psiRe = psi[0];
