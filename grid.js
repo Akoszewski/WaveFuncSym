@@ -73,7 +73,7 @@ function getInitialWaveFunction(w, h)
 
 function calculateLaplacianAtPoint(func, x, y)
 {
-    return func[x+1][y] - 2*func[x][y] + func[x-1][y] + func[x][y+1] - 2*func[x][y] + func[x][y-1];
+    return (func[x+1][y] - 2*func[x][y] + func[x-1][y] + func[x][y+1] - 2*func[x][y] + func[x][y-1]);
 }
 
 function getUpdatedWaveFunction(psi, reducedPlanckConstant, mass)
@@ -81,22 +81,27 @@ function getUpdatedWaveFunction(psi, reducedPlanckConstant, mass)
     var psiRe = psi[0];
     var psiIm = psi[1];
     var delta_t = 0.1;
-    var width = psi.length - 1;
-    var height = psi[0].length - 1;
+    var width = psiRe.length - 1;
+    var height = psiRe[0].length - 1;
+    var factor = reducedPlanckConstant * delta_t / (2 * mass);
     for (let x = 1; x < width; x++)
     {
         for (let y = 1; y < height; y++)
         {
-            var factor = reducedPlanckConstant * delta_t / (2 * mass);
-            var laplaceRe = math.round(calculateLaplacianAtPoint(psiRe, x, y), 3);
-            var laplaceIm = math.round(calculateLaplacianAtPoint(psiIm, x, y), 3);
-            psiRe[x][y] = math.round(-factor * laplaceIm, 3);
-            psiIm[x][y] = math.round(factor * laplaceRe, 3);
+            // var laplaceRe = math.round(calculateLaplacianAtPoint(psiRe, x, y), 9);
+            // var laplaceIm = math.round(calculateLaplacianAtPoint(psiIm, x, y), 9);
+            var laplaceRe = calculateLaplacianAtPoint(psiRe, x, y);
+            var laplaceIm = calculateLaplacianAtPoint(psiIm, x, y);
+            // psiRe[x][y] = math.round((-factor) * laplaceIm, 9);
+            // psiIm[x][y] = math.round(factor * laplaceRe, 9);
+            psiRe[x][y] = -factor * laplaceIm;
+            psiIm[x][y] = factor * laplaceRe;
             // console.log("factor = " + factor)
-            // console.log("laplace = " + laplace)
+            // console.log("laplaceRe = " + laplaceRe)
             // console.log(psi[x][y])
         }
     }
+    console.log("Value: " + psiRe[psiRe.length/2][psiRe[0].length/2])
     return [psiRe, psiIm];
 }
 
@@ -138,5 +143,5 @@ export function Play(ctx)
         Draw(ctx, pixelBuffer, psiRe, psiIm, steps);
         steps = steps + 1;
     },
-    50);
+    1000);
 }
