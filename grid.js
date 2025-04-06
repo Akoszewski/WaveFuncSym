@@ -30,8 +30,8 @@ function setPixel(ctx, pixelBuffer, x, y, color = [0, 0, 0, 255])
 
 function initializeGaussianWavepacket(w, h, center_x, center_y, sigma, init_momemtum_x, init_momentum_y, scalingConstant)
 {
-    let psiRe = new Array(w*h).fill(0);
-    let psiIm = new Array(w*h).fill(0);
+    let psiRe = new Float64Array(w*h);
+    let psiIm = new Float64Array(w*h);
     var maxValRe = 0;
     var maxValIm = 0;
     for (let x = 0; x < w; x++)
@@ -68,7 +68,7 @@ function initializeGaussianWavepacket(w, h, center_x, center_y, sigma, init_mome
 
 function initializeEmptyPotential(w, h)
 {
-    return new Array(w * h).fill(0);
+    return new Float64Array(w * h);
 }
 
 function getInitialWaveFunction(w, h)
