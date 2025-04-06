@@ -69,7 +69,7 @@ function initializeGaussianWavepacket(w, h, center_x, center_y, sigma, init_mome
 function initializePotentialAtOnePoint(w, h)
 {
     var potential = new Float64Array(w * h);
-    potential[(w/2)*h + h*0.75] = 1.0;
+    potential[(w/2)*h + h*0.75] = 0.5;
     return potential;
 }
 
@@ -95,12 +95,25 @@ function calculateLaplacianAtPoint(func, w, h, x, y)
 
 function getUpdatedWaveFunction(psi, w, h, potential, reducedPlanckConstant, mass, rounding)
 {
+    var protectBoundaries = true;
     var psiRe = psi[0];
     var psiIm = psi[1];
     var delta_t = 0.1;
     var factor = reducedPlanckConstant * delta_t / (2 * mass);
+    // Should prevent bouncing on edges but not working
+    if (protectBoundaries) {
+    // for (let y = 0; y < h; y++) {
+    //     psi[y] = psi[h+y];
+    //     psi[(w-1)*h + y] = psi[(w-2)*h + y];
+    // }
+    }
     for (let x = 1; x < w - 1; x++)
     {
+        // Should prevent bouncing on edges but not working
+        if (protectBoundaries) {
+        // psi[x*h] = psi[x*h + 1];
+        // psi[x*h + (h-1)] = psi[x*h + (h-2)];
+        }
         for (let y = 1; y < h - 1; y++)
         {
             var laplaceRe = calculateLaplacianAtPoint(psiRe, w, h, x, y);
