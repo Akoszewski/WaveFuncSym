@@ -66,6 +66,13 @@ function initializeGaussianWavepacket(w, h, center_x, center_y, sigma, init_mome
 //     );
 // }
 
+function initializePotentialAtOnePoint(w, h)
+{
+    var potential = new Float64Array(w * h);
+    potential[(w/2)*h + h*0.75] = 1.0;
+    return potential;
+}
+
 function initializeEmptyPotential(w, h)
 {
     return new Float64Array(w * h);
@@ -78,7 +85,7 @@ function getInitialWaveFunction(w, h)
 
 function getInitialPotential(w, h)
 {
-    return initializeEmptyPotential(w, h);
+    return initializePotentialAtOnePoint(w, h);
 }
 
 function calculateLaplacianAtPoint(func, w, h, x, y)
