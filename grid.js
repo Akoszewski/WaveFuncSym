@@ -133,10 +133,13 @@ function Draw(ctx, pixelBuffer, psiRe, psiIm, steps)
     ctx.putImageData(pixelBuffer, 0, 0);
 }
 
+window.isRunning = true;
+
 export function Play(ctx)
 {
     const pixelBuffer = ctx.createImageData(ctx.canvas.width, ctx.canvas.height);
     var steps = 0;
+    window.isRunning = true;
     var psi = Array();
     var potential = getInitialPotential(ctx.canvas.width, ctx.canvas.height);
     setInterval(() =>
@@ -144,16 +147,28 @@ export function Play(ctx)
         if (steps == 0)
         {
             psi = getInitialWaveFunction(ctx.canvas.width, ctx.canvas.height);
+            steps = steps + 1;
         }
         else
         {
-            psi = getUpdatedWaveFunction(psi, ctx.canvas.width, ctx.canvas.height, potential, 1, 1, -1);
+            if (window.isRunning)
+            {
+                psi = getUpdatedWaveFunction(psi, ctx.canvas.width, ctx.canvas.height, potential, 1, 1, -1);
+                steps = steps + 1;
+            }
         }
         console.log("Steps = " + steps)
         var psiRe = psi[0];
         var psiIm = psi[1];
         Draw(ctx, pixelBuffer, psiRe, psiIm, steps);
-        steps = steps + 1;
     },
     50);
 }
+
+document.addEventListener('keydown', function(event) {
+    if (event.code === 'Space') {
+        event.preventDefault();
+        console.log("spacja")
+        window.isRunning = window.isRunning ? false : true;
+    }
+  });
