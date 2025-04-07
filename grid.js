@@ -93,44 +93,86 @@ function calculateLaplacianAtPoint(func, w, h, x, y)
     return (func[(x+1)*h + y] - 2*func[x*h + y] + func[(x-1)*h + y] + func[x*h + y+1] - 2*func[x*h + y] + func[x*h + y-1]);
 }
 
-function getUpdatedWaveFunction(psi, w, h, potential, reducedPlanckConstant, mass, rounding)
-{
-    var protectBoundaries = true;
-    var psiRe = psi[0];
-    var psiIm = psi[1];
-    var delta_t = 0.1;
-    var factor = reducedPlanckConstant * delta_t / (2 * mass);
-    // Should prevent bouncing on edges but not working
-    if (protectBoundaries) {
-    // for (let y = 0; y < h; y++) {
-    //     psi[y] = psi[h+y];
-    //     psi[(w-1)*h + y] = psi[(w-2)*h + y];
-    // }
-    }
-    for (let x = 1; x < w - 1; x++)
-    {
-        // Should prevent bouncing on edges but not working
-        if (protectBoundaries) {
-        // psi[x*h] = psi[x*h + 1];
-        // psi[x*h + (h-1)] = psi[x*h + (h-2)];
+function createWaveEvolutionKernel(w, h, rounding) {
+    const gpu = new GPU();
+    
+    return gpu.createKernel(function(psiRe, psiIm, potential, factor) {
+        const x = this.thread.x;
+        const y = this.thread.y;
+        const h = this.constants.h;
+        const idx = x * h + y;
+        
+        // Skip boundaries (for mirroring effect)
+        if (x === 0 || x === this.constants.w-1 || y === 0 || y === h-1) {
+            return [psiRe[idx], psiIm[idx]];
         }
-        for (let y = 1; y < h - 1; y++)
-        {
-            var laplaceRe = calculateLaplacianAtPoint(psiRe, w, h, x, y);
-            var laplaceIm = calculateLaplacianAtPoint(psiIm, w, h, x, y);
-            if (rounding > -1) {
-                laplaceRe = math.round(laplaceRe, rounding);
-                laplaceIm = math.round(laplaceIm, rounding);
-            }
-            psiRe[x*h + y] = psiRe[x*h + y] + (-factor) * laplaceIm + potential[x*h + y] * psiIm[x*h + y];
-            psiIm[x*h + y] = psiIm[x*h + y] + factor * laplaceRe - potential[x*h + y] * psiRe[x*h + y];
-            if (rounding > -1) {
-                psiRe[x*h + y] = math.round(psiRe[x*h + y], rounding);
-                psiIm[x*h + y] = math.round(psiIm[x*h + y], rounding);
-            }
+        
+        // Calculate Laplacian (same logic as CPU version)
+        let laplaceRe = (
+            psiRe[(x+1)*h + y] + 
+            psiRe[(x-1)*h + y] + 
+            psiRe[x*h + (y+1)] + 
+            psiRe[x*h + (y-1)] - 
+            4 * psiRe[idx]
+        );
+        
+        let laplaceIm = (
+            psiIm[(x+1)*h + y] + 
+            psiIm[(x-1)*h + y] + 
+            psiIm[x*h + (y+1)] + 
+            psiIm[x*h + (y-1)] - 
+            4 * psiIm[idx]
+        );
+        
+        // Apply rounding if specified
+        if (this.constants.rounding > -1) {
+            laplaceRe = Math.round(laplaceRe * Math.pow(10, this.constants.rounding)) / Math.pow(10, this.constants.rounding);
+            laplaceIm = Math.round(laplaceIm * Math.pow(10, this.constants.rounding)) / Math.pow(10, this.constants.rounding);
+        }
+        
+        // Time evolution (same logic as CPU version)
+        let newRe = psiRe[idx] + (-factor) * laplaceIm + potential[idx] * psiIm[idx];
+        let newIm = psiIm[idx] + factor * laplaceRe - potential[idx] * psiRe[idx];
+        
+        // Apply rounding to final values if specified
+        if (this.constants.rounding > -1) {
+            newRe = Math.round(newRe * Math.pow(10, this.constants.rounding)) / Math.pow(10, this.constants.rounding);
+            newIm = Math.round(newIm * Math.pow(10, this.constants.rounding)) / Math.pow(10, this.constants.rounding);
+        }
+        
+        return [newRe, newIm];
+    })
+    .setOutput([w, h])
+    .setConstants({
+        w: w,
+        h: h,
+        rounding: rounding
+    });
+}
+
+function getUpdatedWaveFunction(psi, w, h, potential, reducedPlanckConstant, mass, rounding) {
+    const delta_t = 0.1;
+    const factor = reducedPlanckConstant * delta_t / (2 * mass);
+    
+    // Create kernel (cache this for better performance)
+    const kernel = createWaveEvolutionKernel(w, h, rounding);
+    
+    // Execute on GPU
+    const result = kernel(psi[0], psi[1], potential, factor);
+    
+    // Convert texture output back to arrays
+    const psiRe = new Float32Array(w * h);
+    const psiIm = new Float32Array(w * h);
+    
+    for (let x = 0; x < w; x++) {
+        for (let y = 0; y < h; y++) {
+            const idx = x * h + y;
+            psiRe[idx] = result[x][y][0];
+            psiIm[idx] = result[x][y][1];
         }
     }
-    console.log("Central value = " + psiRe[(w/2)*h + h/2])
+    
+    console.log("Central value = " + psiRe[(w/2)*h + h/2]);
     return [psiRe, psiIm];
 }
 
