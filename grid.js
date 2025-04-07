@@ -28,18 +28,19 @@ function setPixel(ctx, pixelBuffer, x, y, color = [0, 0, 0, 255])
 //     return psi;
 // }
 
-function initializeGaussianWavepacket(w, h, center_x, center_y, sigma, init_momemtum_x, init_momentum_y, scalingConstant)
+function initializeGaussianWavepacket(w, h, center_x, center_y, sigma, init_momemtum_x, init_momentum_y)
 {
     let psiRe = new Float64Array(w*h);
     let psiIm = new Float64Array(w*h);
     var maxValRe = 0;
     var maxValIm = 0;
+    var scalingConstant = 1/(sigma*math.sqrt(2*math.pi));
     for (let x = 0; x < w; x++)
     {
         for (let y = 0; y < h; y++)
         {
             var initMomentums = math.complex(0, init_momemtum_x * x + init_momentum_y * y);
-            var quotient = -((x-center_x)**2 + (y-center_y)**2)/4*sigma**2;
+            var quotient = -((x-center_x)**2 + (y-center_y)**2)/(4*sigma**2);
             var exponent = math.exp(math.multiply(math.add(quotient, initMomentums), scalingConstant));
             psiRe[x*h + y] = exponent.re;
             psiIm[x*h + y] = exponent.im;
@@ -73,6 +74,25 @@ function initializePotentialAtOnePoint(w, h)
     return potential;
 }
 
+function initializeGaussianPotentialWell(w, h)
+{
+    var potential = new Float64Array(w * h);
+
+    // var centerX = w/2;
+    // var centerY = h/2;
+    // var sigma = w/8;
+
+    // for (let x = 0; x < w; x++) {
+    //     for (let y = 0; y < h; y++) {
+    //         var dx = x - centerX;
+    //         var dy = y - centerY;
+    //         potential[x*h + y] = 5 * Math.exp(-(dx*dx + dy*dy)/(2*sigma*sigma));
+    //     }
+    // }
+
+    return potential;
+}
+
 function initializeEmptyPotential(w, h)
 {
     return new Float64Array(w * h);
@@ -80,12 +100,14 @@ function initializeEmptyPotential(w, h)
 
 function getInitialWaveFunction(w, h)
 {
-    return initializeGaussianWavepacket(w, h, w/2, h/2, 20, 2, 2, 0.001);
+    return initializeGaussianWavepacket(w, h, w/2, h/2, 1.5, 2, 2, 1);
 }
 
 function getInitialPotential(w, h)
 {
-    return initializePotentialAtOnePoint(w, h);
+    // return initializeGaussianPotentialWell(w, h);
+    // return initializePotentialAtOnePoint(w, h);
+    return initializeEmptyPotential(w, h);
 }
 
 function calculateLaplacianAtPoint(func, w, h, x, y)
@@ -98,22 +120,10 @@ function getUpdatedWaveFunction(psi, w, h, potential, reducedPlanckConstant, mas
     var protectBoundaries = true;
     var psiRe = psi[0];
     var psiIm = psi[1];
-    var delta_t = 0.1;
+    var delta_t = 0.02;
     var factor = reducedPlanckConstant * delta_t / (2 * mass);
-    // Should prevent bouncing on edges but not working
-    if (protectBoundaries) {
-    // for (let y = 0; y < h; y++) {
-    //     psi[y] = psi[h+y];
-    //     psi[(w-1)*h + y] = psi[(w-2)*h + y];
-    // }
-    }
     for (let x = 1; x < w - 1; x++)
     {
-        // Should prevent bouncing on edges but not working
-        if (protectBoundaries) {
-        // psi[x*h] = psi[x*h + 1];
-        // psi[x*h + (h-1)] = psi[x*h + (h-2)];
-        }
         for (let y = 1; y < h - 1; y++)
         {
             var laplaceRe = calculateLaplacianAtPoint(psiRe, w, h, x, y);
@@ -182,7 +192,7 @@ export function Play(ctx)
         var psiIm = psi[1];
         Draw(ctx, pixelBuffer, psiRe, psiIm, steps);
     },
-    50);
+    10);
 }
 
 document.addEventListener('keydown', function(event) {
